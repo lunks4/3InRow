@@ -466,8 +466,8 @@ export default function Match3Game() {
         data-row={row}
         data-col={col}
         className={cn(
-          "w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-lg cursor-pointer",
-          isSelected ? "bg-indigo-200 scale-110" : "bg-white hover:bg-gray-100",
+          "w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-lg cursor-pointer",
+          isSelected ? "bg-indigo-200 scale-110" : "hover:bg-gray-100",
           isMatched ? "animate-pulse bg-yellow-100" : "",
           isDraggingThis ? "opacity-50" : "",
         )}
