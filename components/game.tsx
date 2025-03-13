@@ -67,10 +67,7 @@ export default function Match3Game() {
       if (isDragging) {
         e.preventDefault()
         const touch = e.touches[0]
-        // Добавляем коэффициент сглаживания
-        const newX = touch.clientX * 0.7 + dragPosition.x * 0.3
-        const newY = touch.clientY * 0.7 + dragPosition.y * 0.3
-        setDragPosition({ x: newX, y: newY })
+        setDragPosition({ x: touch.clientX, y: touch.clientY })
       }
     }
 
