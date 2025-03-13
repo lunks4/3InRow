@@ -386,57 +386,64 @@ export default function Match3Game() {
     }
   }
 
-  const handleDragEnd = (e: React.MouseEvent) => {
+  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !draggedTile || !dragPosition) {
       setIsDragging(false)
       setDraggedTile(null)
       setDragPosition(null)
       return
     }
-
-    const endX = e.clientX
-    const endY = e.clientY
-
+  
+    let endX: number, endY: number
+    if ('changedTouches' in e) {
+      // Обработка TouchEvent
+      endX = e.changedTouches[0].clientX
+      endY = e.changedTouches[0].clientY
+    } else {
+      // Обработка MouseEvent
+      endX = e.clientX
+      endY = e.clientY
+    }
+  
     // Определяем направление свайпа
     const direction = determineSwipeDirection(dragPosition.x, dragPosition.y, endX, endY)
-
-    // Минимальное расстояние для свайпа
-    const minSwipeDistance = 20
+  
+    // Увеличиваем минимальное расстояние для свайпа
+    const minSwipeDistance = 30
     const deltaX = Math.abs(endX - dragPosition.x)
     const deltaY = Math.abs(endY - dragPosition.y)
-
+  
     if (Math.max(deltaX, deltaY) < minSwipeDistance) {
-      // Если перемещение слишком маленькое, считаем это кликом
       setIsDragging(false)
       setDraggedTile(null)
       setDragPosition(null)
       return
     }
-
-    // Определяем координаты соседней плитки на основе направления
+  
+    // Определяем целевую позицию
     let targetRow = draggedTile.row
     let targetCol = draggedTile.col
-
+  
     switch (direction) {
-      case "up":
+      case 'up':
         targetRow = Math.max(0, draggedTile.row - 1)
         break
-      case "down":
+      case 'down':
         targetRow = Math.min(BOARD_SIZE - 1, draggedTile.row + 1)
         break
-      case "left":
+      case 'left':
         targetCol = Math.max(0, draggedTile.col - 1)
         break
-      case "right":
+      case 'right':
         targetCol = Math.min(BOARD_SIZE - 1, draggedTile.col + 1)
         break
     }
-
-    // Если координаты изменились, меняем плитки местами
+  
+    // Выполняем замену если позиция изменилась
     if (targetRow !== draggedTile.row || targetCol !== draggedTile.col) {
       swapTiles(draggedTile.row, draggedTile.col, targetRow, targetCol)
     }
-
+  
     setIsDragging(false)
     setDraggedTile(null)
     setDragPosition(null)
@@ -485,6 +492,7 @@ export default function Match3Game() {
 
       <div
         className="grid grid-cols-8 gap-1 md:gap-2 mb-4 relative"
+        style={{ touchAction: 'none' }}
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
         ref={gameContainerRef}
