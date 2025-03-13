@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Gem, Star, Heart, Zap, Diamond, Droplet } from "lucide-react"
+import { Gem, Star, Heart, Zap, Diamond, Droplet } from 'lucide-react'
 import { cn } from "@/lib/utils"
 
 // Define tile types
@@ -31,6 +31,9 @@ export default function Match3Game() {
   const [draggedTile, setDraggedTile] = useState<{ row: number; col: number } | null>(null)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
 
+  // Добавляем ref для контейнера игрового поля
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+
   // Initialize the board
   useEffect(() => {
     initializeBoard()
@@ -48,6 +51,60 @@ export default function Match3Game() {
       }
     }
   }, [board, isSwapping])
+
+  // Добавляем эффект для настройки обработчиков событий
+  useEffect(() => {
+    const container = gameContainerRef.current;
+    if (!container) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        setDragPosition({ x: touch.clientX, y: touch.clientY });
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isDragging || !draggedTile || !dragPosition) {
+        setIsDragging(false);
+        setDraggedTile(null);
+        setDragPosition(null);
+        return;
+      }
+
+      const touch = e.changedTouches[0];
+      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const tileElement = elemBelow?.closest('[data-tile]');
+
+      if (tileElement) {
+        const targetRow = parseInt(tileElement.getAttribute('data-row') || '-1');
+        const targetCol = parseInt(tileElement.getAttribute('data-col') || '-1');
+
+        const isAdjacent =
+          (Math.abs(draggedTile.row - targetRow) === 1 && draggedTile.col === targetCol) ||
+          (Math.abs(draggedTile.col - targetCol) === 1 && draggedTile.row === targetRow);
+
+        if (isAdjacent && targetRow >= 0 && targetCol >= 0) {
+          swapTiles(draggedTile.row, draggedTile.col, targetRow, targetCol);
+        }
+      }
+
+      setIsDragging(false);
+      setDraggedTile(null);
+      setDragPosition(null);
+    };
+
+    // Добавляем обработчики с правильными опциями
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    // Очищаем обработчики при размонтировании
+    return () => {
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, draggedTile, dragPosition]);
 
   // Initialize the board with random tiles
   const initializeBoard = () => {
@@ -193,90 +250,53 @@ export default function Match3Game() {
     }, 300)
   }
 
-  // Начало перетаскивания
+  // Обновляем handleDragStart
   const handleDragStart = (row: number, col: number, e: React.MouseEvent | React.TouchEvent) => {
-    if (isSwapping || matches.length > 0) return
+    if (isSwapping || matches.length > 0) return;
 
-    setIsDragging(true)
-    setDraggedTile({ row, col })
+    setIsDragging(true);
+    setDraggedTile({ row, col });
 
-    // Получаем начальные координаты
-    let clientX, clientY
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX
-      clientY = e.touches[0].clientY
-    } else {
-      clientX = e.clientX
-      clientY = e.clientY
-    }
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragPosition({ x: clientX, y: clientY });
+  };
 
-    setDragPosition({ x: clientX, y: clientY })
+  // Обновляем handleDragMove (теперь только для мыши)
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (!isDragging || !draggedTile) return;
+    setDragPosition({ x: e.clientX, y: e.clientY });
+  };
 
-    // Предотвращаем стандартное поведение браузера
-    e.preventDefault()
-  }
-
-  // Обработка перемещения при перетаскивании
-  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging || !draggedTile) return
-
-    // Получаем текущие координаты
-    let clientX, clientY
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX
-      clientY = e.touches[0].clientY
-    } else {
-      clientX = e.clientX
-      clientY = e.clientY
-    }
-
-    setDragPosition({ x: clientX, y: clientY })
-    e.preventDefault()
-  }
-
-  // Завершение перетаскивания
-  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
+  // Обновляем handleDragEnd (теперь только для мыши)
+  const handleDragEnd = (e: React.MouseEvent) => {
     if (!isDragging || !draggedTile || !dragPosition) {
-      setIsDragging(false)
-      setDraggedTile(null)
-      setDragPosition(null)
-      return
+      setIsDragging(false);
+      setDraggedTile(null);
+      setDragPosition(null);
+      return;
     }
 
-    // Находим элемент под курсором/пальцем
-    let clientX, clientY
-    if ("changedTouches" in e) {
-      clientX = e.changedTouches[0].clientX
-      clientY = e.changedTouches[0].clientY
-    } else {
-      clientX = e.clientX
-      clientY = e.clientY
-    }
-
-    // Получаем элемент под курсором
-    const elemBelow = document.elementFromPoint(clientX, clientY)
-    const tileElement = elemBelow?.closest("[data-tile]")
+    const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+    const tileElement = elemBelow?.closest('[data-tile]');
 
     if (tileElement) {
-      const targetRow = Number.parseInt(tileElement.getAttribute("data-row") || "-1")
-      const targetCol = Number.parseInt(tileElement.getAttribute("data-col") || "-1")
+      const targetRow = parseInt(tileElement.getAttribute('data-row') || '-1');
+      const targetCol = parseInt(tileElement.getAttribute('data-col') || '-1');
 
-      // Проверяем, что это соседняя ячейка
       const isAdjacent =
         (Math.abs(draggedTile.row - targetRow) === 1 && draggedTile.col === targetCol) ||
-        (Math.abs(draggedTile.col - targetCol) === 1 && draggedTile.row === targetRow)
+        (Math.abs(draggedTile.col - targetCol) === 1 && draggedTile.row === targetRow);
 
       if (isAdjacent && targetRow >= 0 && targetCol >= 0) {
-        swapTiles(draggedTile.row, draggedTile.col, targetRow, targetCol)
+        swapTiles(draggedTile.row, draggedTile.col, targetRow, targetCol);
       }
     }
 
-    // Сбрасываем состояние перетаскивания
-    setIsDragging(false)
-    setDraggedTile(null)
-    setDragPosition(null)
-    e.preventDefault()
-  }
+    setIsDragging(false);
+    setDraggedTile(null);
+    setDragPosition(null);
+  };
 
   // Render a tile
   const renderTile = (tileType: number, row: number, col: number) => {
@@ -323,22 +343,24 @@ export default function Match3Game() {
         <Button onClick={initializeBoard}>New Game</Button>
       </div>
 
-      <div
+      <div 
+        ref={gameContainerRef}
         className="grid grid-cols-8 gap-1 md:gap-2 mb-4 relative"
         onMouseMove={handleDragMove}
-        onTouchMove={handleDragMove}
         onMouseUp={handleDragEnd}
-        onTouchEnd={handleDragEnd}
         onMouseLeave={handleDragEnd}
       >
         {board.map((row, rowIndex) =>
           row.map((tile, colIndex) => (
-            <div key={`${rowIndex}-${colIndex}`}>{renderTile(tile, rowIndex, colIndex)}</div>
-          )),
+            <div key={`${rowIndex}-${colIndex}`}>
+              {renderTile(tile, rowIndex, colIndex)}
+            </div>
+          ))
         )}
       </div>
+
       {isDragging && draggedTile && dragPosition && board[draggedTile.row][draggedTile.col] !== -1 && (
-        <div
+        <div 
           className="fixed pointer-events-none z-50"
           style={{
             left: `${dragPosition.x - 30}px`,
@@ -347,19 +369,18 @@ export default function Match3Game() {
         >
           <div className="w-14 h-14 flex items-center justify-center bg-white rounded-lg shadow-lg">
             {(() => {
-              const tileType = board[draggedTile.row][draggedTile.col]
-              const tile = TILE_TYPES[tileType]
-              const Icon = tile.icon
-              return <Icon className={cn("w-8 h-8", tile.color)} />
+              const tileType = board[draggedTile.row][draggedTile.col];
+              const tile = TILE_TYPES[tileType];
+              const Icon = tile.icon;
+              return <Icon className={cn("w-8 h-8", tile.color)} />;
             })()}
           </div>
         </div>
       )}
 
       <div className="text-sm text-gray-500 text-center">
-        Select two adjacent tiles to swap them and create matches of 3 or more.
+        Перетащите фигуры, чтобы создать ряд из 3 или более одинаковых фигур
       </div>
     </Card>
-  )
+  );
 }
-
