@@ -397,7 +397,7 @@ export default function Match3Game() {
   }
 
   return (
-    <Card className="p-4 md:p-6 bg-white shadow-xl rounded-xl max-w-md w-full">
+    <Card className="p-4 md:p-6 bg-white shadow-xl rounded-xl max-w-md w-full" style={{ touchAction: "none" }}>
       <div className="flex justify-between items-center mb-4">
         <div className="text-2xl font-bold">Score: {score}</div>
         <Button onClick={initializeBoard}>New Game</Button>
