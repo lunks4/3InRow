@@ -255,82 +255,77 @@ export default function Match3Game() {
     }
   }
 
-  // Swap two tiles with animation
   const swapTiles = (row1: number, col1: number, row2: number, col2: number) => {
-    if (isSwapping) return
-
-    setIsSwapping(true)
-
+    if (isSwapping) return;
+  
+    setIsSwapping(true);
+  
     // Создаем анимацию для обеих плиток
-    const newAnimatedTiles = { ...animatedTiles }
-
+    const newAnimatedTiles = { ...animatedTiles };
+  
     // Анимация для первой плитки
     newAnimatedTiles[`${row1}-${col1}`] = {
       transform: `translate(${(col2 - col1) * 100}%, ${(row2 - row1) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 10,
-    }
-
+    };
+  
     // Анимация для второй плитки
     newAnimatedTiles[`${row2}-${col2}`] = {
       transform: `translate(${(col1 - col2) * 100}%, ${(row1 - row2) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 5,
-    }
-
-    setAnimatedTiles(newAnimatedTiles)
-
+    };
+  
+    setAnimatedTiles(newAnimatedTiles);
+  
     // После завершения анимации
     setTimeout(() => {
-      // Меняем плитки местами в доске
-      const newBoard = [...board]
-      const temp = newBoard[row1][col1]
-      newBoard[row1][col1] = newBoard[row2][col2]
-      newBoard[row2][col2] = temp
-
+      // Создаем временную копию доски для проверки совпадений
+      const tempBoard = [...board.map(row => [...row])];
+      const temp = tempBoard[row1][col1];
+      tempBoard[row1][col1] = tempBoard[row2][col2];
+      tempBoard[row2][col2] = temp;
+  
       // Проверяем, создал ли обмен совпадение
-      const tempBoard = [...newBoard]
-      const matches = findMatchesInBoard(tempBoard)
-
+      const matches = findMatchesInBoard(tempBoard);
+  
       if (matches.length === 0) {
         // Если совпадений нет, анимируем возврат плиток
-
+  
         // Создаем анимацию возврата
-        const revertAnimatedTiles = { ...newAnimatedTiles }
-
+        const revertAnimatedTiles = { ...newAnimatedTiles };
+  
         // Инвертируем трансформации для возврата
         revertAnimatedTiles[`${row1}-${col1}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 10,
-        }
-
+        };
+  
         revertAnimatedTiles[`${row2}-${col2}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 5,
-        }
-
-        setAnimatedTiles(revertAnimatedTiles)
-
+        };
+  
+        setAnimatedTiles(revertAnimatedTiles);
+  
         // После завершения анимации возврата
         setTimeout(() => {
-          // Возвращаем плитки на исходные позиции в доске
-          const revertBoard = [...board] // Используем исходную доску
-          setBoard(revertBoard)
-
-          // Сбрасываем анимацию
-          setAnimatedTiles({})
-          setIsSwapping(false)
-        }, ANIMATION_DURATION)
+          // Сбрасываем анимацию и состояние свапа
+          setAnimatedTiles({});
+          setIsSwapping(false);
+        }, ANIMATION_DURATION);
       } else {
         // Если есть совпадения, применяем изменения
-        setBoard(newBoard)
-        setAnimatedTiles({})
-        setIsSwapping(false)
+        setBoard(tempBoard);
+        setAnimatedTiles({});
+        setIsSwapping(false);
       }
-    }, ANIMATION_DURATION)
-  }
+    }, ANIMATION_DURATION);
+  };
+  
 
   // Находит совпадения в переданной доске (не меняя состояние)
   const findMatchesInBoard = (boardToCheck: number[][]) => {
