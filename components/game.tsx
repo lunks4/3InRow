@@ -87,7 +87,7 @@ export default function Match3Game() {
       const direction = determineSwipeDirection(dragPosition.x, dragPosition.y, endX, endY)
 
       // Минимальное расстояние для свайпа
-      const minSwipeDistance = 20
+      const minSwipeDistance = 3
       const deltaX = Math.abs(endX - dragPosition.x)
       const deltaY = Math.abs(endY - dragPosition.y)
 
