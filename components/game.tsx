@@ -236,7 +236,7 @@ export default function Match3Game() {
   }
 
   // Handle tile click
-  const handleTileClick = (row: number, col: number) => {
+  const handleTileClick = () => {
     if (isSwapping || matches.length > 0) return
 
     // if (selectedTile === null) {
@@ -472,7 +472,7 @@ export default function Match3Game() {
           isDraggingThis ? "opacity-50" : "",
         )}
         style={animationStyle}
-        onClick={() => handleTileClick(row, col)}
+        onClick={() => handleTileClick()}
         onMouseDown={(e) => handleDragStart(row, col, e)}
         onTouchStart={(e) => handleDragStart(row, col, e)}
       >
