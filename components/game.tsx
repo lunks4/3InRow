@@ -239,95 +239,93 @@ export default function Match3Game() {
   const handleTileClick = (row: number, col: number) => {
     if (isSwapping || matches.length > 0) return
 
-    if (selectedTile === null) {
-      setSelectedTile({ row, col })
-    } else {
-      // Check if tiles are adjacent
-      const isAdjacent =
-        (Math.abs(selectedTile.row - row) === 1 && selectedTile.col === col) ||
-        (Math.abs(selectedTile.col - col) === 1 && selectedTile.row === row)
+    // if (selectedTile === null) {
+    //   setSelectedTile({ row, col })
+    // } else {
+    //   // Check if tiles are adjacent
+    //   const isAdjacent =
+    //     (Math.abs(selectedTile.row - row) === 1 && selectedTile.col === col) ||
+    //     (Math.abs(selectedTile.col - col) === 1 && selectedTile.row === row)
 
-      if (isAdjacent) {
-        swapTiles(selectedTile.row, selectedTile.col, row, col)
-      }
+    //   if (isAdjacent) {
+    //     swapTiles(selectedTile.row, selectedTile.col, row, col)
+    //   }
 
-      setSelectedTile(null)
-    }
+    //   setSelectedTile(null)
+    // }
   }
 
   // Swap two tiles with animation
   const swapTiles = (row1: number, col1: number, row2: number, col2: number) => {
-    if (isSwapping) return
+    if (isSwapping) return;
 
-    setIsSwapping(true)
+    setIsSwapping(true);
 
     // Создаем анимацию для обеих плиток
-    const newAnimatedTiles = { ...animatedTiles }
+    const newAnimatedTiles = { ...animatedTiles };
 
     // Анимация для первой плитки
     newAnimatedTiles[`${row1}-${col1}`] = {
       transform: `translate(${(col2 - col1) * 100}%, ${(row2 - row1) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 10,
-    }
+    };
 
     // Анимация для второй плитки
     newAnimatedTiles[`${row2}-${col2}`] = {
       transform: `translate(${(col1 - col2) * 100}%, ${(row1 - row2) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 5,
-    }
+    };
 
-    setAnimatedTiles(newAnimatedTiles)
+    setAnimatedTiles(newAnimatedTiles);
 
     // После завершения анимации
     setTimeout(() => {
-      // Меняем плитки местами в доске
-      const newBoard = [...board]
-      const temp = newBoard[row1][col1]
-      newBoard[row1][col1] = newBoard[row2][col2]
-      newBoard[row2][col2] = temp
+      // Создаем временную копию доски для проверки совпадений
+      const tempBoard = [...board.map(row => [...row])];
+      const temp = tempBoard[row1][col1];
+      tempBoard[row1][col1] = tempBoard[row2][col2];
+      tempBoard[row2][col2] = temp;
 
       // Проверяем, создал ли обмен совпадение
-      const tempBoard = [...newBoard]
-      const matches = findMatchesInBoard(tempBoard)
+      const matches = findMatchesInBoard(tempBoard);
 
       if (matches.length === 0) {
         // Если совпадений нет, анимируем возврат плиток
 
         // Создаем анимацию возврата
-        const revertAnimatedTiles = { ...newAnimatedTiles }
+        const revertAnimatedTiles = { ...newAnimatedTiles };
 
         // Инвертируем трансформации для возврата
         revertAnimatedTiles[`${row1}-${col1}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 10,
-        }
+        };
 
         revertAnimatedTiles[`${row2}-${col2}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 5,
-        }
+        };
 
-        setAnimatedTiles(revertAnimatedTiles)
+        setAnimatedTiles(revertAnimatedTiles);
 
         // После завершения анимации возврата
         setTimeout(() => {
-          // Важно: НЕ меняем доску, так как мы хотим вернуться к исходному состоянию
-          // Просто сбрасываем анимацию и состояние свапа
-          setAnimatedTiles({})
-          setIsSwapping(false)
-        }, ANIMATION_DURATION)
+          // Сбрасываем анимацию и состояние свапа
+          setAnimatedTiles({});
+          setIsSwapping(false);
+        }, ANIMATION_DURATION);
       } else {
         // Если есть совпадения, применяем изменения
-        setBoard(newBoard)
-        setAnimatedTiles({})
-        setIsSwapping(false)
+        setBoard(tempBoard);
+        setAnimatedTiles({});
+        setIsSwapping(false);
       }
-    }, ANIMATION_DURATION)
-  }
+    }, ANIMATION_DURATION);
+  };
 
   // Находит совпадения в переданной доске (не меняя состояние)
   const findMatchesInBoard = (boardToCheck: number[][]) => {
@@ -407,7 +405,7 @@ export default function Match3Game() {
     }
   
     // Увеличиваем минимальное расстояние для свайпа
-    const minSwipeDistance = 30
+    const minSwipeDistance = 10
     const deltaX = Math.abs(endX - dragPosition.x)
     const deltaY = Math.abs(endY - dragPosition.y)
   
@@ -505,7 +503,7 @@ export default function Match3Game() {
           )),
         )}
       </div>
-      {isDragging && draggedTile && dragPosition && board[draggedTile.row][draggedTile.col] !== -1 && (
+      {/* {isDragging && draggedTile && dragPosition && board[draggedTile.row][draggedTile.col] !== -1 && (
         <div
           className="fixed pointer-events-none z-50"
           style={{
@@ -522,7 +520,7 @@ export default function Match3Game() {
             })()}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="text-sm text-gray-500 text-center">
         Перетащите фигуры, чтобы создать ряд из 3 или более одинаковых фигур
