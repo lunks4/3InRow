@@ -67,7 +67,10 @@ export default function Match3Game() {
       if (isDragging) {
         e.preventDefault()
         const touch = e.touches[0]
-        setDragPosition({ x: touch.clientX, y: touch.clientY })
+        // Добавляем коэффициент сглаживания
+        const newX = touch.clientX * 0.7 + dragPosition.x * 0.3
+        const newY = touch.clientY * 0.7 + dragPosition.y * 0.3
+        setDragPosition({ x: newX, y: newY })
       }
     }
 
@@ -255,77 +258,79 @@ export default function Match3Game() {
     }
   }
 
+  // Swap two tiles with animation
   const swapTiles = (row1: number, col1: number, row2: number, col2: number) => {
-    if (isSwapping) return;
-  
-    setIsSwapping(true);
-  
+    if (isSwapping) return
+
+    setIsSwapping(true)
+
     // Создаем анимацию для обеих плиток
-    const newAnimatedTiles = { ...animatedTiles };
-  
+    const newAnimatedTiles = { ...animatedTiles }
+
     // Анимация для первой плитки
     newAnimatedTiles[`${row1}-${col1}`] = {
       transform: `translate(${(col2 - col1) * 100}%, ${(row2 - row1) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 10,
-    };
-  
+    }
+
     // Анимация для второй плитки
     newAnimatedTiles[`${row2}-${col2}`] = {
       transform: `translate(${(col1 - col2) * 100}%, ${(row1 - row2) * 100}%)`,
       transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
       zIndex: 5,
-    };
-  
-    setAnimatedTiles(newAnimatedTiles);
-  
+    }
+
+    setAnimatedTiles(newAnimatedTiles)
+
     // После завершения анимации
     setTimeout(() => {
-      // Создаем временную копию доски для проверки совпадений
-      const tempBoard = [...board.map(row => [...row])];
-      const temp = tempBoard[row1][col1];
-      tempBoard[row1][col1] = tempBoard[row2][col2];
-      tempBoard[row2][col2] = temp;
-  
+      // Меняем плитки местами в доске
+      const newBoard = [...board]
+      const temp = newBoard[row1][col1]
+      newBoard[row1][col1] = newBoard[row2][col2]
+      newBoard[row2][col2] = temp
+
       // Проверяем, создал ли обмен совпадение
-      const matches = findMatchesInBoard(tempBoard);
-  
+      const tempBoard = [...newBoard]
+      const matches = findMatchesInBoard(tempBoard)
+
       if (matches.length === 0) {
         // Если совпадений нет, анимируем возврат плиток
-  
+
         // Создаем анимацию возврата
-        const revertAnimatedTiles = { ...newAnimatedTiles };
-  
+        const revertAnimatedTiles = { ...newAnimatedTiles }
+
         // Инвертируем трансформации для возврата
         revertAnimatedTiles[`${row1}-${col1}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 10,
-        };
-  
+        }
+
         revertAnimatedTiles[`${row2}-${col2}`] = {
           transform: `translate(0, 0)`,
           transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
           zIndex: 5,
-        };
-  
-        setAnimatedTiles(revertAnimatedTiles);
-  
+        }
+
+        setAnimatedTiles(revertAnimatedTiles)
+
         // После завершения анимации возврата
         setTimeout(() => {
-          // Сбрасываем анимацию и состояние свапа
-          setAnimatedTiles({});
-          setIsSwapping(false);
-        }, ANIMATION_DURATION);
+          // Важно: НЕ меняем доску, так как мы хотим вернуться к исходному состоянию
+          // Просто сбрасываем анимацию и состояние свапа
+          setAnimatedTiles({})
+          setIsSwapping(false)
+        }, ANIMATION_DURATION)
       } else {
         // Если есть совпадения, применяем изменения
-        setBoard(tempBoard);
-        setAnimatedTiles({});
-        setIsSwapping(false);
+        setBoard(newBoard)
+        setAnimatedTiles({})
+        setIsSwapping(false)
       }
-    }, ANIMATION_DURATION);
-  };
-  
+    }, ANIMATION_DURATION)
+  }
 
   // Находит совпадения в переданной доске (не меняя состояние)
   const findMatchesInBoard = (boardToCheck: number[][]) => {
@@ -394,19 +399,15 @@ export default function Match3Game() {
       return
     }
   
+    // Получаем конечные координаты для разных типов событий
     let endX: number, endY: number
     if ('changedTouches' in e) {
-      // Обработка TouchEvent
       endX = e.changedTouches[0].clientX
       endY = e.changedTouches[0].clientY
     } else {
-      // Обработка MouseEvent
       endX = e.clientX
       endY = e.clientY
     }
-  
-    // Определяем направление свайпа
-    const direction = determineSwipeDirection(dragPosition.x, dragPosition.y, endX, endY)
   
     // Увеличиваем минимальное расстояние для свайпа
     const minSwipeDistance = 30
@@ -419,31 +420,33 @@ export default function Match3Game() {
       setDragPosition(null)
       return
     }
-  
-    // Определяем целевую позицию
+
+    const direction = determineSwipeDirection(dragPosition.x, dragPosition.y, endX, endY)
+
+    // Определяем координаты соседней плитки на основе направления
     let targetRow = draggedTile.row
     let targetCol = draggedTile.col
-  
+
     switch (direction) {
-      case 'up':
+      case "up":
         targetRow = Math.max(0, draggedTile.row - 1)
         break
-      case 'down':
+      case "down":
         targetRow = Math.min(BOARD_SIZE - 1, draggedTile.row + 1)
         break
-      case 'left':
+      case "left":
         targetCol = Math.max(0, draggedTile.col - 1)
         break
-      case 'right':
+      case "right":
         targetCol = Math.min(BOARD_SIZE - 1, draggedTile.col + 1)
         break
     }
-  
-    // Выполняем замену если позиция изменилась
+
+    // Если координаты изменились, меняем плитки местами
     if (targetRow !== draggedTile.row || targetCol !== draggedTile.col) {
       swapTiles(draggedTile.row, draggedTile.col, targetRow, targetCol)
     }
-  
+
     setIsDragging(false)
     setDraggedTile(null)
     setDragPosition(null)
@@ -492,7 +495,7 @@ export default function Match3Game() {
 
       <div
         className="grid grid-cols-8 gap-1 md:gap-2 mb-4 relative"
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: 'none' }} 
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
         ref={gameContainerRef}
